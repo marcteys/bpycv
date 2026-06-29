@@ -18,6 +18,44 @@ from .statu_recover import StatuRecover
 from .node_graph import activate_node_tree, Node
 
 
+PRINCIPLED_INPUT_ALIASES = {
+    "Specular": ("Specular IOR Level", "Specular"),
+    "Sheen": ("Sheen Weight", "Sheen"),
+    "Clearcoat": ("Coat Weight", "Clearcoat", "Coat"),
+    "Clearcoat Roughness": ("Coat Roughness", "Clearcoat Roughness"),
+}
+
+
+def _coerce_socket_value(socket, value):
+    if isinstance(value, (str, bytes)) or hasattr(value, "__len__"):
+        return value
+    try:
+        default_value = socket.default_value
+    except AttributeError:
+        return value
+    if not hasattr(default_value, "__len__"):
+        return value
+    if len(default_value) == 4:
+        return (value, value, value, 1)
+    return (value,) * len(default_value)
+
+
+def set_node_input(node, input_names, value):
+    if isinstance(input_names, str):
+        input_names = (input_names,)
+    for input_name in input_names:
+        if input_name in node.inputs:
+            socket = node.inputs[input_name]
+            socket.default_value = _coerce_socket_value(socket, value)
+            return True
+    return False
+
+
+def set_principled_input(bsdf_node, input_name, value):
+    input_names = PRINCIPLED_INPUT_ALIASES.get(input_name, (input_name,))
+    return set_node_input(bsdf_node, input_names, value)
+
+
 class set_inst_material(StatuRecover):
     def __init__(self):
         StatuRecover.__init__(self)
@@ -57,7 +95,8 @@ def set_vertex_color_material(obj):
     material.use_nodes = True
     material.node_tree.nodes.clear()
     with activate_node_tree(material.node_tree):
-        bsdf = Node("ShaderNodeBsdfPrincipled", Roughness=1, Specular=0)
+        bsdf = Node("ShaderNodeBsdfPrincipled", Roughness=1)
+        set_principled_input(bsdf.node, "Specular", 0)
         bsdf["Base Color"] = Node("ShaderNodeVertexColor").Color
         Node("ShaderNodeOutputMaterial").Surface = bsdf.BSDF
     obj.data.materials.append(material)

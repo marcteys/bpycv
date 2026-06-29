@@ -1,20 +1,34 @@
 #!/usr/bin/env python3
 
 import bpy
-import bpycv
 
 import os
 import glob
 import random
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import bpycv
 
 example_data_dir = os.path.abspath(
-    os.path.join(__file__, "../../../bpycv_example_data")
+    os.path.join(os.path.dirname(__file__), "../../bpycv_example_data")
 )
+if not os.path.isdir(example_data_dir):
+    raise FileNotFoundError(
+        f'Example data not found at "{example_data_dir}". '
+        "Run example/run_ycb_demo.sh or clone "
+        "https://github.com/DIYer22/bpycv_example_data next to this repository."
+    )
 
 models = sorted(glob.glob(os.path.join(example_data_dir, "model", "*", "*.obj")))
 cat_id_to_model_path = dict(enumerate(sorted(models), 1))
 
 distractors = sorted(glob.glob(os.path.join(example_data_dir, "distractor", "*.obj")))
+if not models or not distractors:
+    raise FileNotFoundError(
+        f'Example data at "{example_data_dir}" is incomplete: '
+        f"found {len(models)} models and {len(distractors)} distractors."
+    )
 
 bpycv.clear_all()
 bpy.context.scene.frame_set(1)

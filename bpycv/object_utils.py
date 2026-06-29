@@ -13,6 +13,46 @@ import numpy as np
 from .material_utils import set_vertex_color_material
 
 
+IMPORT_OPERATOR_PATHS = {
+    "stl": ("wm.stl_import", "import_mesh.stl"),
+    "obj": ("wm.obj_import", "import_scene.obj"),
+    "dae": ("wm.collada_import",),
+    "ply": ("wm.ply_import", "import_mesh.ply"),
+    "fbx": ("wm.fbx_import", "import_scene.fbx"),
+}
+
+
+def _get_bpy_op(path):
+    op = bpy.ops
+    for attr in path.split("."):
+        try:
+            op = getattr(op, attr)
+        except AttributeError:
+            return None
+    try:
+        op.get_rna_type()
+    except (AttributeError, KeyError):
+        return None
+    return op
+
+
+def _import_mesh_file(ext, filepath):
+    errors = []
+    for op_path in IMPORT_OPERATOR_PATHS.get(ext, ()):
+        import_func = _get_bpy_op(op_path)
+        if import_func is None:
+            continue
+        try:
+            return import_func(filepath=filepath)
+        except Exception as exc:
+            errors.append(f"{op_path}: {exc}")
+    supported_exts = ", ".join(sorted(IMPORT_OPERATOR_PATHS))
+    raise RuntimeError(
+        f'No usable Blender import operator found for ".{ext}" file "{filepath}". '
+        f"Supported extensions: {supported_exts}. Tried: {errors}"
+    )
+
+
 def load_obj(filepath):
     """
     Auto load mesh file, support .stl, .obj,
@@ -27,17 +67,8 @@ def load_obj(filepath):
     obj
 
     """
-    ext = filepath[filepath.rindex(".") + 1 :]
-    # Use the new Blender 4.x import operators
-    ext_to_import_func = {
-        "stl": bpy.ops.wm.stl_import,
-        "obj": bpy.ops.wm.obj_import,
-        "dae": bpy.ops.wm.collada_import,
-        "ply": bpy.ops.wm.ply_import,
-        "fbx": bpy.ops.wm.fbx_import,
-    }
-    import_func = ext_to_import_func[ext]
-    import_func(filepath=filepath)
+    ext = filepath[filepath.rindex(".") + 1 :].lower()
+    _import_mesh_file(ext, filepath)
     assert len(bpy.context.selected_objects) >= 1, f'load "{filepath}" failed!'
     obj = bpy.context.selected_objects[-1]
 

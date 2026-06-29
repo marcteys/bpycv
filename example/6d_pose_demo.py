@@ -10,11 +10,15 @@ Run Command:
 
 import cv2
 import bpy
-import bpycv
 import boxx
+import os
 import random
+import sys
 import numpy as np
 import scipy.io as sio
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import bpycv
 
 
 def draw_6d_pose(img, xyzs_in_obj, pose, intrinsic, color=(255, 0, 0)):

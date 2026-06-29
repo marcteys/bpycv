@@ -10,9 +10,13 @@ Notice: When update demo.py:
 
 import cv2
 import bpy
-import bpycv
+import os
 import random
+import sys
 import numpy as np
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import bpycv
 
 # remove all MESH objects
 [bpy.data.objects.remove(obj) for obj in bpy.data.objects if obj.type == "MESH"]

@@ -7,6 +7,7 @@ import bpy
 import random
 
 from .object_utils import activate_obj, load_obj
+from .material_utils import set_principled_input
 
 
 def texture_bsdf_dr(obj, shade_smooth_rate=0.9):
@@ -32,17 +33,17 @@ def texture_bsdf_dr(obj, shade_smooth_rate=0.9):
 
     material = obj.material_slots[0].material
     bsdf = material.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs["Metallic"].default_value = random.random()
-    bsdf.inputs["Specular"].default_value = random.random()
-    bsdf.inputs["Specular Tint"].default_value = random.random()
-    bsdf.inputs["Roughness"].default_value = random.uniform(0.3, 1)
-    bsdf.inputs["Anisotropic"].default_value = random.random()
-    bsdf.inputs["Anisotropic Rotation"].default_value = random.random()
-    bsdf.inputs["Sheen"].default_value = random.random()
-    bsdf.inputs["Sheen Tint"].default_value = random.random()
-    bsdf.inputs["Clearcoat"].default_value = random.random()
-    bsdf.inputs["Clearcoat Roughness"].default_value = random.random()
-    bsdf.inputs["Alpha"].default_value = random.uniform(0.9, 1)
+    set_principled_input(bsdf, "Metallic", random.random())
+    set_principled_input(bsdf, "Specular", random.random())
+    set_principled_input(bsdf, "Specular Tint", random.random())
+    set_principled_input(bsdf, "Roughness", random.uniform(0.3, 1))
+    set_principled_input(bsdf, "Anisotropic", random.random())
+    set_principled_input(bsdf, "Anisotropic Rotation", random.random())
+    set_principled_input(bsdf, "Sheen", random.random())
+    set_principled_input(bsdf, "Sheen Tint", random.random())
+    set_principled_input(bsdf, "Clearcoat", random.random())
+    set_principled_input(bsdf, "Clearcoat Roughness", random.random())
+    set_principled_input(bsdf, "Alpha", random.uniform(0.9, 1))
     return bsdf
 
 

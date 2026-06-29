@@ -20,6 +20,27 @@ from .statu_recover import StatuRecover, undo
 from .camera_utils import get_cam
 
 
+def _set_attr_if_exists(recover, obj, attr, value):
+    if hasattr(obj, attr):
+        recover.set_attr(obj, attr, value)
+        return True
+    return False
+
+
+def _set_enum_if_supported(recover, obj, attr, value):
+    if not hasattr(obj, attr):
+        return False
+    try:
+        enum_items = obj.bl_rna.properties[attr].enum_items
+        enum_values = {item.identifier for item in enum_items}
+    except (AttributeError, KeyError):
+        enum_values = {value}
+    if value not in enum_values:
+        return False
+    recover.set_attr(obj, attr, value)
+    return True
+
+
 def set_cycles_compute_device_type(compute_device_type="CUDA"):
     bpy.context.scene.cycles.device = "GPU"
     bpy.context.preferences.addons[
@@ -48,18 +69,25 @@ class set_annotation_render(StatuRecover):
         if render.engine in ["BLENDER_EEVEE"]:
             # When enviroment not support GUI, Eevee will raise Exception("Unable to open a display")  (@Blender 2.81)
             self.set_attr(render, "engine", "BLENDER_EEVEE")
-            self.set_attr(scene.eevee, "taa_render_samples", 1)
-            self.set_attr(scene.eevee, "use_bloom", False)
+            eevee = getattr(scene, "eevee", None)
+            if eevee is not None:
+                _set_attr_if_exists(self, eevee, "taa_render_samples", 1)
+                _set_attr_if_exists(self, eevee, "use_bloom", False)
         elif render.engine == "BLENDER_EEVEE_NEXT":
             self.set_attr(render, "engine", "BLENDER_EEVEE_NEXT")
-            self.set_attr(scene.eevee, "taa_render_samples", 1)
+            eevee = getattr(scene, "eevee", None)
+            if eevee is not None:
+                _set_attr_if_exists(self, eevee, "taa_render_samples", 1)
         elif render.engine == "CYCLES":
             self.set_attr(render, "engine", "CYCLES")
             self.set_attr(scene.cycles, "samples", 1)
             # Set fewer samples for faster testing
-            if hasattr(scene.cycles, 'preview_samples'):
+            if hasattr(scene.cycles, "preview_samples"):
                 self.set_attr(scene.cycles, "preview_samples", 1)
-            self.set_attr(bpy.context.view_layer.cycles, "use_denoising", False)
+            if hasattr(bpy.context.view_layer, "cycles"):
+                _set_attr_if_exists(
+                    self, bpy.context.view_layer.cycles, "use_denoising", False
+                )
         self.set_attr(render, "film_transparent", True)
         self.set_attr(scene.render, "use_motion_blur", False)
 
@@ -67,6 +95,9 @@ class set_annotation_render(StatuRecover):
         # self.set_attr(scene.render, "tile_x", 256)
         # self.set_attr(scene.render, "tile_y", 256)
 
+        image_settings = render.image_settings
+        _set_enum_if_supported(self, image_settings, "media_type", "MULTI_LAYER_IMAGE")
+        _set_attr_if_exists(self, image_settings, "use_exr_interleave", True)
         attrs = dict(
             file_format="OPEN_EXR_MULTILAYER",
             compression=0,
@@ -83,6 +114,7 @@ class set_image_render(StatuRecover):
         StatuRecover.__init__(self)
         scene = bpy.context.scene
         render = scene.render
+        _set_enum_if_supported(self, render.image_settings, "media_type", "IMAGE")
         attrs = dict(file_format="PNG", compression=15)
         self.set_attrs(render.image_settings, attrs)
 

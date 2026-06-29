@@ -27,7 +27,7 @@
 - 🥈 Achievement: [We win 2nd place in IROS 2020 Open Cloud Robot Table Organization Challenge (OCRTOC)](https://github.com/DIYer22/bpycv/issues/15)
 
 ## ▮ Install
-`bpycv` support Blender 2.9, 3.x, 4.x
+`bpycv` support Blender 2.9, 3.x, 4.x, 5.x
 
 1. Download and install Blender [here](https://www.blender.org/download/).
 
